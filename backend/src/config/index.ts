@@ -52,6 +52,12 @@ const schema = z.object({
   CIVIC_FLAG_THRESHOLD: z.coerce.number().min(-100).max(100).default(-20),
   // Minimum attributed items before a project's flag is considered meaningful.
   CIVIC_MIN_SAMPLE: z.coerce.number().int().positive().default(3),
+
+  // On-chain anchoring (optional; set after `anchor deploy`). When unset the
+  // agent runs fully off-chain and the opinion API returns the derived nullifier
+  // without broadcasting.
+  CIVIC_PROGRAM_ID: z.string().optional().default(''),
+  CIVIC_RELAYER_KEY: z.string().optional().default('~/.config/solana/id.json'),
 });
 
 const parsed = schema.safeParse(process.env);
@@ -114,6 +120,12 @@ export const config = {
       .filter(Boolean),
     flagThreshold: env.CIVIC_FLAG_THRESHOLD,
     minSample: env.CIVIC_MIN_SAMPLE,
+  },
+
+  onchain: {
+    programId: env.CIVIC_PROGRAM_ID,
+    relayerKey: env.CIVIC_RELAYER_KEY,
+    enabled: env.CIVIC_PROGRAM_ID.length > 0,
   },
 } as const;
 
