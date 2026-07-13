@@ -88,7 +88,8 @@ Privy auth — all type-clean and previously running). The **on-chain program** 
 - ✅ zk identity verifier (Self / zkPassport adapters) → per-project nullifier (verified)
 - ✅ Full path proven on a validator: zk proof → nullifier → on-chain opinion → aggregate updated
 - ✅ **Deployed to devnet** — program live, registry + 3 projects registered on-chain
-- 🔜 Reskin frontend terminal as the civic pulse UI + live link
+- ✅ **Civic pulse UI** — landing + live dashboard (claim vs sentiment, flags, on-chain links, zk "cast your voice"); verified running end-to-end
+- 🔜 Deploy the live link (Vercel frontend + hosted backend)
 - 🔜 3-min demo video, build-in-public posts
 - 🧭 STRETCH: on-chain zk proof verification + SPL Account Compression
 
