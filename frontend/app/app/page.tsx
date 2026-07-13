@@ -1,7 +1,7 @@
-'use client';
+import { CivicTerminal } from '@/components/civic/CivicTerminal';
 
-import { AuthGate } from '@/components/auth/AuthGate';
-
-export default function Page() {
-  return <AuthGate />;
+// Viewing the civic pulse is public and keyless (transparency). Casting a voice
+// requires the zero-knowledge identity check inside the modal.
+export default function CivicApp() {
+  return <CivicTerminal />;
 }

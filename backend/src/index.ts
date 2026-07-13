@@ -3,7 +3,6 @@ import express from 'express';
 import cors from 'cors';
 import { config } from './config/index.js';
 import { logger } from './utils/logger.js';
-import { api } from './api/rest.js';
 import { civicApi } from './api/civic-rest.js';
 import { attachWebSocket } from './api/ws.js';
 import { civicAgent } from './agent/civic-agent.js';
@@ -12,7 +11,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use('/api', civicApi); // Janamat Pulse civic API
-app.use('/api', api); // legacy trading routes (kept, dormant)
 
 // Central error handler so route failures return clean JSON.
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
