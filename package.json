@@ -1,0 +1,14 @@
+{
+  "name": "janamat-pulse",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Janamat Pulse — an agentic civic-accountability layer for Solana, complementing Janamat.",
+  "scripts": {
+    "install:all": "npm --prefix backend install && npm --prefix frontend install",
+    "dev": "node scripts/dev.mjs",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "program:build": "cd program && anchor build",
+    "program:deploy": "cd program && anchor deploy --provider.cluster devnet"
+  }
+}

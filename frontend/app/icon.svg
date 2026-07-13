@@ -1,0 +1,15 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>SolVane</title>
+  <defs>
+    <linearGradient id="beam" x1="14" y1="52" x2="52" y2="14" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#9945FF"/>
+      <stop offset="100%" stop-color="#14F195"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="64" height="64" rx="15" fill="#0B0B14"/>
+  <rect x="1" y="1" width="62" height="62" rx="14" fill="none" stroke="url(#beam)" stroke-opacity="0.4" stroke-width="2"/>
+  <!-- Rising pole, bold so it reads at 16px -->
+  <line x1="18" y1="49" x2="48" y2="16" stroke="url(#beam)" stroke-width="7.5" stroke-linecap="round"/>
+  <!-- News flag -->
+  <path d="M 24 42 Q 11 35, 19 26 Q 29 31, 36 33 Z" fill="url(#beam)"/>
+</svg>

@@ -1,0 +1,19 @@
+# deps
+node_modules/
+# builds
+.next/
+dist/
+*.tsbuildinfo
+# anchor / solana
+program/target/
+program/.anchor/
+test-ledger/
+# secrets & local data
+.env
+.env.local
+backend/data/
+*.keypair.json
+program/**/*-keypair.json
+# misc
+.DS_Store
+claude-session.jsonl
