@@ -83,13 +83,16 @@ Privy auth — all type-clean and previously running). The **on-chain program** 
 **zk identity** layers are being built from scratch against that engine.
 
 - ✅ Reusable engine forked in and type-clean
-- ✅ `civic_record` Anchor program written (PDA-based sybil-resistant records)
-- ✅ Civic project registry + sentiment schema
-- 🔜 Wire the agent's sentiment output to reclassify for civic domain
-- 🔜 zk identity verifier (zkPassport / Self) → nullifier
-- 🔜 Deploy program to devnet + anchor opinions on-chain
-- 🔜 Accountability-flag demo, tests, live deploy, demo video
+- ✅ Civic reclassification: sentiment vs official claim + accountability engine (verified on 32 live Nepali headlines)
+- ✅ `civic_record` Anchor program — built, deployed, **4/4 tests pass incl. sybil-rejection**
+- ✅ zk identity verifier (Self / zkPassport adapters) → per-project nullifier (verified)
+- ✅ Full path proven on a validator: zk proof → nullifier → on-chain opinion → aggregate updated
+- 🔜 Deploy to **devnet** (needs the deploy wallet funded; localnet deploy done)
+- 🔜 Reskin frontend terminal as the civic pulse UI + live link
+- 🔜 3-min demo video, build-in-public posts
 - 🧭 STRETCH: on-chain zk proof verification + SPL Account Compression
+
+Program id (localnet): `GQ9X4R1UKVUHz96XbRMDyngtQibxP1wMkmyngjLZNUwu`
 
 See [`docs/AUDIT.md`](docs/AUDIT.md) for the baseline audit of the forked engine.
 

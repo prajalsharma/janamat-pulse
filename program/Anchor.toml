@@ -5,17 +5,16 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-civic_record = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+civic_record = "GQ9X4R1UKVUHz96XbRMDyngtQibxP1wMkmyngjLZNUwu"
 
 [programs.localnet]
-civic_record = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
-
-[registry]
-url = "https://api.apr.dev"
+civic_record = "GQ9X4R1UKVUHz96XbRMDyngtQibxP1wMkmyngjLZNUwu"
 
 [provider]
 cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+test = "node --import tsx ./node_modules/mocha/bin/mocha.js -t 1000000 tests/**/*.ts"
+
+[hooks]

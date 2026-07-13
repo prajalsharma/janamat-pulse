@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 // Placeholder program id. Run `anchor keys sync` after `anchor build` to replace
 // this with the real deployed program id (also update Anchor.toml).
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("GQ9X4R1UKVUHz96XbRMDyngtQibxP1wMkmyngjLZNUwu");
 
 /// civic_record — Janamat Pulse on-chain accountability ledger.
 ///
