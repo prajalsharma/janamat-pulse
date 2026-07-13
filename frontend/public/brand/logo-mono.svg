@@ -1,0 +1,7 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Janamat Pulse">
+  <circle cx="100" cy="100" r="80" fill="none" stroke="currentColor" stroke-opacity="0.15" stroke-width="2"/>
+  <circle cx="40" cy="110" r="6" fill="currentColor"/>
+  <path d="M40,110 L62,110 L72,94 L82,110 L96,110" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M96,110 L112,132 L156,64" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="156" cy="64" r="5" fill="currentColor"/>
+</svg>
