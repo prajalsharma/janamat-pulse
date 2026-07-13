@@ -59,17 +59,60 @@ const SIMULATED: Omit<NewsItem, 'id' | 'ingestedAt'>[] = [
   },
 ];
 
+/**
+ * Simulated Nepali civic headlines used when live feeds are unreachable, so the
+ * civic agent stays demonstrably live offline. Deliberately spans disputing and
+ * corroborating tone across tracked projects.
+ */
+const SIMULATED_CIVIC: Omit<NewsItem, 'id' | 'ingestedAt'>[] = [
+  {
+    title: 'Melamchi water supply disrupted again as monsoon damage delays repairs',
+    summary:
+      'Residents in Kathmandu report dry taps for weeks as the Melamchi Water Supply Project faces yet another delay, reigniting public frustration over the decades-long project.',
+    source: 'sim.janamat',
+    link: 'https://example.com/melamchi-delay',
+    publishedAt: Date.now() - 60_000,
+  },
+  {
+    title: 'Pokhara International Airport still idle as international flights remain scarce',
+    summary:
+      'Critics question the debt-funded Pokhara airport as it struggles to attract regular international traffic, raising concerns about its economic viability.',
+    source: 'sim.janamat',
+    link: 'https://example.com/pokhara-idle',
+    publishedAt: Date.now() - 120_000,
+  },
+  {
+    title: 'Kathmandu-Terai Fast Track construction shows progress on key tunnel section',
+    summary:
+      'Officials say a major tunnel milestone on the Kathmandu-Terai expressway has been completed, though analysts note the overall timeline has slipped repeatedly.',
+    source: 'sim.janamat',
+    link: 'https://example.com/fasttrack-progress',
+    publishedAt: Date.now() - 180_000,
+  },
+];
+
 export class NewsService {
   private simulated = false;
 
-  /** Pull all configured feeds, dedup, persist. Returns only genuinely new items. */
+  /** Pull all configured crypto feeds (legacy SolVane path). */
   async fetchLatest(): Promise<NewsItem[]> {
+    return this.fetchFrom(config.newsFeeds, SIMULATED);
+  }
+
+  /** Pull Nepali civic feeds, dedup, persist. Returns only genuinely new items. */
+  async fetchCivic(): Promise<NewsItem[]> {
+    return this.fetchFrom(config.civic.feeds, SIMULATED_CIVIC);
+  }
+
+  /** Core: parse the given feeds, dedup+persist, fall back to `fallback` items. */
+  private async fetchFrom(
+    feeds: string[],
+    fallback: Omit<NewsItem, 'id' | 'ingestedAt'>[],
+  ): Promise<NewsItem[]> {
     const now = Date.now();
     const collected: NewsItem[] = [];
 
-    const results = await Promise.allSettled(
-      config.newsFeeds.map((url) => parser.parseURL(url)),
-    );
+    const results = await Promise.allSettled(feeds.map((url) => parser.parseURL(url)));
 
     for (const r of results) {
       if (r.status !== 'fulfilled') {
@@ -99,7 +142,7 @@ export class NewsService {
         logger.warn('all live feeds unreachable - using simulated headlines');
         this.simulated = true;
       }
-      for (const s of SIMULATED) {
+      for (const s of fallback) {
         collected.push({ ...s, id: stableId(s.link, now), ingestedAt: now });
       }
     } else {

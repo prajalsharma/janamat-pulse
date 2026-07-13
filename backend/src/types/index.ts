@@ -114,4 +114,6 @@ export type AgentEvent =
   | { type: 'price'; payload: PriceSnapshot }
   | { type: 'decision'; payload: DecisionDTO }
   | { type: 'trade'; payload: TradeRecord }
+  // Janamat Pulse: civic accountability cycle (see types/civic.ts).
+  | { type: 'civic'; payload: import('./civic.js').CivicPulseSnapshot }
   | { type: 'log'; payload: { level: string; message: string; at: number } };

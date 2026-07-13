@@ -38,6 +38,20 @@ const schema = z.object({
     .default(
       'https://cointelegraph.com/rss/tag/solana,https://decrypt.co/feed,https://cryptoslate.com/feed/',
     ),
+
+  // ── Janamat Pulse: civic domain ─────────────────────────────────────────
+  // Nepali news RSS the agent reads for civic discourse. Free + keyless.
+  CIVIC_NEWS_FEEDS: z
+    .string()
+    .default(
+      'https://english.onlinekhabar.com/feed,https://kathmandupost.com/rss,https://myrepublica.nagariknetwork.com/feed/,https://english.khabarhub.com/feed/',
+    ),
+  // A project is flagged when average public sentiment falls to or below this
+  // (-100..100). Government claims are implicitly positive, so a strongly
+  // negative public reading is the accountability gap.
+  CIVIC_FLAG_THRESHOLD: z.coerce.number().min(-100).max(100).default(-20),
+  // Minimum attributed items before a project's flag is considered meaningful.
+  CIVIC_MIN_SAMPLE: z.coerce.number().int().positive().default(3),
 });
 
 const parsed = schema.safeParse(process.env);
@@ -93,6 +107,14 @@ export const config = {
   newsFeeds: env.NEWS_FEEDS.split(',')
     .map((s) => s.trim())
     .filter(Boolean),
+
+  civic: {
+    feeds: env.CIVIC_NEWS_FEEDS.split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+    flagThreshold: env.CIVIC_FLAG_THRESHOLD,
+    minSample: env.CIVIC_MIN_SAMPLE,
+  },
 } as const;
 
 export type Config = typeof config;

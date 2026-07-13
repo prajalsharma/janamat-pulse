@@ -73,3 +73,29 @@ export interface AccountabilityFlag {
   gap: number;
   summary: string;
 }
+
+/** A tracked project as exposed to the dashboard (no matcher internals). */
+export interface CivicProjectView {
+  id: number;
+  name: string;
+  category: CivicCategory;
+  region: string;
+  officialClaim: string;
+}
+
+/**
+ * One cycle of the civic agent: the scored discourse and the per-project
+ * accountability flags. This is the civic analogue of the trading decision —
+ * fully transparent and streamed to the live civic terminal.
+ */
+export interface CivicPulseSnapshot {
+  at: number;
+  ticks: number;
+  engine: 'claude' | 'heuristic';
+  usingSimulated: boolean;
+  /** attributed civic sentiments scored this cycle */
+  items: CivicSentiment[];
+  /** accountability flag per tracked project */
+  flags: AccountabilityFlag[];
+  projects: CivicProjectView[];
+}
