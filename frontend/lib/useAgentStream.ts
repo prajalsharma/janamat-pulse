@@ -27,6 +27,11 @@ interface StreamState {
 
 function wsUrl(): string {
   if (typeof window === 'undefined') return '';
+  // Production: point at the hosted backend via NEXT_PUBLIC_WS_URL, e.g.
+  // wss://your-backend.onrender.com/ws (set in the Vercel project env).
+  // Local dev: default to the backend on :4000 of the current host.
+  const configured = process.env.NEXT_PUBLIC_WS_URL;
+  if (configured && configured.length > 0) return configured;
   const host = window.location.hostname;
   return `ws://${host}:4000/ws`;
 }
