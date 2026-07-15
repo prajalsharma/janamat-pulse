@@ -89,10 +89,8 @@ Privy auth — all type-clean and previously running). The **on-chain program** 
 - ✅ Full path proven on a validator: zk proof → nullifier → on-chain opinion → aggregate updated
 - ✅ **Deployed to devnet** — program live, registry + 3 projects registered on-chain
 - ✅ **Civic pulse UI** — landing + live dashboard (claim vs sentiment, flags, on-chain links, zk "cast your voice"); verified running end-to-end
-- 🔜 Deploy the live link (Vercel frontend + hosted backend)
-- 🔜 3-min demo video, build-in-public posts
-- 🧭 STRETCH: on-chain zk proof verification + SPL Account Compression
 
+  
 **Program (devnet):** [`GQ9X4R1UKVUHz96XbRMDyngtQibxP1wMkmyngjLZNUwu`](https://explorer.solana.com/address/GQ9X4R1UKVUHz96XbRMDyngtQibxP1wMkmyngjLZNUwu?cluster=devnet)
 
 See [`docs/AUDIT.md`](docs/AUDIT.md) for the baseline audit of the forked engine.
