@@ -26,6 +26,7 @@ export const CIVIC_PROJECTS: CivicProject[] = [
       'khms',
       'melamchi drinking water',
     ],
+    searchQuery: 'Melamchi water supply Kathmandu',
   },
   {
     id: 2,
@@ -40,6 +41,7 @@ export const CIVIC_PROJECTS: CivicProject[] = [
       'pia',
       'regional international airport pokhara',
     ],
+    searchQuery: '"Pokhara International Airport"',
   },
   {
     id: 3,
@@ -51,12 +53,29 @@ export const CIVIC_PROJECTS: CivicProject[] = [
     keywords: [
       'fast track',
       'kathmandu terai',
+      'kathmandu tarai',
       'expressway',
       'kathmandu-terai fast track',
       'nijgadh',
     ],
+    searchQuery: 'Kathmandu Terai Fast Track expressway',
   },
 ];
+
+/**
+ * Build a live Google News RSS search feed for a project. This is how the agent
+ * sources REAL, project-specific discourse: the feed is derived from the project
+ * itself (not a hardcoded URL list), so it scales with the registry.
+ */
+export function projectNewsFeed(p: CivicProject): string {
+  const q = encodeURIComponent(p.searchQuery ?? p.name);
+  return `https://news.google.com/rss/search?q=${q}&hl=en-US&gl=US&ceid=US:en`;
+}
+
+/** One live news-search feed per tracked project. */
+export function projectNewsFeeds(): string[] {
+  return CIVIC_PROJECTS.map(projectNewsFeed);
+}
 
 /** Attribute a headline/text to a tracked project by keyword match, or null. */
 export function attributeProject(text: string): CivicProject | null {

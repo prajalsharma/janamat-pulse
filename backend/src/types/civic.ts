@@ -28,6 +28,11 @@ export interface CivicProject {
   officialClaim: string;
   /** matcher terms the agent uses to attribute a headline to this project */
   keywords: string[];
+  /**
+   * News-search query used to pull real, project-specific discourse (Google
+   * News RSS). Optional; defaults to the project name when unset.
+   */
+  searchQuery?: string;
 }
 
 /** How a piece of public discourse relates to the official claim. */

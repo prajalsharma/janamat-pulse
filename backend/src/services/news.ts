@@ -3,11 +3,16 @@ import { config } from '../config/index.js';
 import { logger } from '../utils/logger.js';
 import { stableId } from '../utils/hash.js';
 import { saveNews } from '../db/index.js';
+import { projectNewsFeeds } from '../data/civic-projects.seed.js';
 import type { NewsItem } from '../types/index.js';
 
 const parser = new Parser({
-  timeout: 10_000,
-  headers: { 'User-Agent': 'SolVane/1.0 (+news-sentiment-agent)' },
+  timeout: 12_000,
+  // A browser-like UA so aggregators (e.g. Google News RSS) serve the feed.
+  headers: {
+    'User-Agent':
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+  },
 });
 
 function hostOf(url: string): string {
@@ -99,9 +104,15 @@ export class NewsService {
     return this.fetchFrom(config.newsFeeds, SIMULATED);
   }
 
-  /** Pull Nepali civic feeds, dedup, persist. Returns only genuinely new items. */
+  /**
+   * Pull civic discourse, dedup, persist. Combines the configured Nepali news
+   * feeds (broad national discourse) with a live news-search feed derived from
+   * each tracked project (real, project-specific coverage that actually
+   * attributes). Returns only genuinely new items.
+   */
   async fetchCivic(): Promise<NewsItem[]> {
-    return this.fetchFrom(config.civic.feeds, SIMULATED_CIVIC);
+    const feeds = Array.from(new Set([...config.civic.feeds, ...projectNewsFeeds()]));
+    return this.fetchFrom(feeds, SIMULATED_CIVIC);
   }
 
   /** Core: parse the given feeds, dedup+persist, fall back to `fallback` items. */

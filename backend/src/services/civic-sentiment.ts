@@ -139,8 +139,22 @@ async function withClaude(
 export class CivicSentimentService {
   readonly engine: 'claude' | 'heuristic' = config.ai.enabled ? 'claude' : 'heuristic';
 
-  /** Attribute + score a single item. */
+  // Score each item once (keyed by stable item id). The agent re-evaluates a
+  // rolling window every tick, so this keeps re-scoring cheap and, with Claude,
+  // avoids paying to re-score the same headline repeatedly.
+  private cache = new Map<string, CivicSentiment>();
+
+  /** Attribute + score a single item, memoized by item id. */
   async scoreItem(item: NewsItem): Promise<CivicSentiment> {
+    const hit = this.cache.get(item.id);
+    if (hit) return hit;
+    const scored = await this.scoreItemUncached(item);
+    if (this.cache.size > 5000) this.cache.clear(); // bound memory
+    this.cache.set(item.id, scored);
+    return scored;
+  }
+
+  private async scoreItemUncached(item: NewsItem): Promise<CivicSentiment> {
     const project = attributeProject(`${item.title} ${item.summary}`);
     const projectId = project?.id ?? null;
     const category = project?.category ?? CivicCategory.Governance;

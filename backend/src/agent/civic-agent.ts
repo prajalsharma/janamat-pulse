@@ -3,8 +3,16 @@ import { logger } from '../utils/logger.js';
 import { newsService } from '../services/news.js';
 import { civicSentimentService } from '../services/civic-sentiment.js';
 import { CIVIC_PROJECTS } from '../data/civic-projects.seed.js';
+import { recentNews } from '../db/index.js';
 import { evaluateAll } from './accountability.js';
 import { bus } from './bus.js';
+
+/**
+ * How many recent stored headlines to re-evaluate each cycle. The signal is a
+ * rolling window over accumulated discourse, not just this tick's fresh items,
+ * so accountability stays populated between ticks and across restarts.
+ */
+const CIVIC_WINDOW = 300;
 import type { CivicPulseSnapshot, CivicProjectView } from '../types/civic.js';
 
 /**
@@ -76,12 +84,15 @@ export class CivicAgent {
   private async runTick(): Promise<CivicPulseSnapshot> {
     this.ticks += 1;
     try {
-      // 1. Ingest civic discourse.
+      // 1. Ingest fresh civic discourse (persists new items; broadcast them).
       const fresh = await newsService.fetchCivic();
       if (fresh.length) bus.emitEvent({ type: 'news', payload: fresh });
 
-      // 2. Score items attributable to a tracked project.
-      const items = await civicSentimentService.scoreAttributed(fresh);
+      // 2. Score a rolling window of recent stored discourse (not only this
+      //    tick's fresh items), so the accountability signal reflects the
+      //    accumulated real coverage and survives restarts. Scores are cached.
+      const window = recentNews(CIVIC_WINDOW);
+      const items = await civicSentimentService.scoreAttributed(window);
 
       // 3. Accountability flags per project.
       const flags = evaluateAll(items);
