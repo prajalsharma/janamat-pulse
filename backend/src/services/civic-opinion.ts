@@ -49,8 +49,13 @@ function hexToBytes(hex: string, len: number): Uint8Array {
 }
 
 function loadRelayer(): Keypair {
-  const path = config.onchain.relayerKey.replace(/^~/, process.env.HOME ?? '');
-  const raw = JSON.parse(readFileSync(path, 'utf8'));
+  const val = config.onchain.relayerKey.trim();
+  // Accept the key inline as a secret-key JSON array (set as an env var on a
+  // host that has no keypair file), e.g. CIVIC_RELAYER_KEY=[12,34,...].
+  // Otherwise treat it as a file path (local dev, e.g. ~/.config/solana/id.json).
+  const raw: number[] = val.startsWith('[')
+    ? JSON.parse(val)
+    : JSON.parse(readFileSync(val.replace(/^~/, process.env.HOME ?? ''), 'utf8'));
   return Keypair.fromSecretKey(Uint8Array.from(raw));
 }
 
