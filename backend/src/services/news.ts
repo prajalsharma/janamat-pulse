@@ -2,9 +2,14 @@ import Parser from 'rss-parser';
 import { config } from '../config/index.js';
 import { logger } from '../utils/logger.js';
 import { stableId } from '../utils/hash.js';
-import { saveNews } from '../db/index.js';
-import { projectNewsFeeds } from '../data/civic-projects.seed.js';
+import { saveNews, recentNewsSince } from '../db/index.js';
+import {
+  attributeProject,
+  projectNewsFeeds,
+  CIVIC_PROJECTS,
+} from '../data/civic-projects.seed.js';
 import type { NewsItem } from '../types/index.js';
+import type { ProjectHeadlines } from '../types/civic.js';
 
 const parser = new Parser({
   timeout: 12_000,
@@ -95,6 +100,67 @@ const SIMULATED_CIVIC: Omit<NewsItem, 'id' | 'ingestedAt'>[] = [
     publishedAt: Date.now() - 180_000,
   },
 ];
+
+/**
+ * Recency window (days) for the "top headlines per project" surface. Coverage
+ * older than this ages out automatically so each project shows its CURRENT real
+ * news. The agent re-pulls every project feed each tick, so within this window
+ * the top headlines stay fresh (weekly-cadence framing: a 14-day rolling view).
+ */
+export const HEADLINE_WINDOW_DAYS = 14;
+
+/** Max headlines surfaced per project (the "top 3–4"). */
+export const MAX_HEADLINES_PER_PROJECT = 4;
+
+/**
+ * Top real headlines per tracked project, computed from stored news:
+ *   • windowed to the last `windowDays` (stale items age out),
+ *   • attributed to a project via the existing keyword matcher,
+ *   • deduped (by link/title), newest first, capped at `perProject`.
+ *
+ * Every tracked project gets an entry. A project with no recent coverage returns
+ * an empty `items` list — surfaced honestly rather than fabricated.
+ */
+export function topHeadlinesByProject(
+  windowDays = HEADLINE_WINDOW_DAYS,
+  perProject = MAX_HEADLINES_PER_PROJECT,
+): ProjectHeadlines[] {
+  const since = Date.now() - windowDays * 24 * 60 * 60 * 1000;
+  const items = recentNewsSince(since, 500); // newest first
+
+  const buckets = new Map<number, NewsItem[]>();
+  const seen = new Map<number, Set<string>>();
+
+  for (const item of items) {
+    const project = attributeProject(`${item.title} ${item.summary}`);
+    if (!project) continue;
+
+    let bucket = buckets.get(project.id);
+    if (!bucket) {
+      bucket = [];
+      buckets.set(project.id, bucket);
+      seen.set(project.id, new Set());
+    }
+    if (bucket.length >= perProject) continue;
+
+    const key = (item.link || item.title).toLowerCase();
+    const dedup = seen.get(project.id)!;
+    if (dedup.has(key)) continue;
+    dedup.add(key);
+    bucket.push(item);
+  }
+
+  // One entry per tracked project, in registry order (honest empties included).
+  return CIVIC_PROJECTS.map((p) => ({
+    projectId: p.id,
+    items: (buckets.get(p.id) ?? []).map((i) => ({
+      title: i.title,
+      source: i.source,
+      link: i.link,
+      publishedAt: i.publishedAt,
+    })),
+  }));
+}
 
 export class NewsService {
   private simulated = false;

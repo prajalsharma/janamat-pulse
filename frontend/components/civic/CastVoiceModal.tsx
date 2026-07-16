@@ -1,15 +1,18 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { X, Fingerprint, Link2, CheckCircle2, Loader2 } from 'lucide-react';
+import { X, Fingerprint, Link2, CheckCircle2, Loader2, LogIn, ShieldCheck } from 'lucide-react';
 import { castOpinion, type CivicProjectView, type OpinionResult } from '@/lib/civic';
+import { usePrivyState } from '@/lib/usePrivyState';
+import { shortAddr } from '@/lib/format';
 
 type Phase = 'form' | 'verifying' | 'anchoring' | 'done' | 'error';
 
 /**
- * One verified human = one voice. For the MVP the zk identity proof is stubbed
- * with a dev unique-id (the real zkPassport/Self flow slots in here); the
- * nullifier + on-chain anchoring are real. Copy avoids em/en dashes.
+ * One account = one voice per project. Identity is Privy social login: the user
+ * signs in, and their Privy access token is verified server-side and mapped to a
+ * per-project nullifier. This is honest social-login sybil resistance, NOT
+ * passport-grade personhood. Copy avoids em/en dashes.
  */
 export function CastVoiceModal({
   project,
@@ -18,9 +21,10 @@ export function CastVoiceModal({
   project: CivicProjectView;
   onClose: () => void;
 }) {
+  const { configured, ready, authenticated, loggingIn, loginError, email, solanaWallet, login, getAccessToken } =
+    usePrivyState();
   const [phase, setPhase] = useState<Phase>('form');
   const [sentiment, setSentiment] = useState(-40);
-  const [uniqueId, setUniqueId] = useState('');
   const [result, setResult] = useState<OpinionResult | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -33,16 +37,15 @@ export function CastVoiceModal({
   async function submit() {
     setErr(null);
     setPhase('verifying');
-    const id = uniqueId.trim() || `citizen-${Math.abs(hash(project.name + sentiment + navigatorSeed()))}`;
     try {
-      // brief verify beat, then anchor
-      await wait(600);
+      const token = await getAccessToken();
+      if (!token) throw new Error('Could not read your sign-in. Please sign in again.');
       setPhase('anchoring');
       const r = await castOpinion({
         projectId: project.id,
         sentiment,
         confidence: 80,
-        uniqueId: id,
+        accessToken: token,
       });
       setResult(r);
       setPhase('done');
@@ -54,6 +57,7 @@ export function CastVoiceModal({
 
   const stanceLabel = sentiment <= -20 ? 'Disputes the claim' : sentiment >= 20 ? 'Corroborates the claim' : 'Neutral';
   const stanceColor = sentiment <= -20 ? 'text-civic' : sentiment >= 20 ? 'text-signal' : 'text-content-muted';
+  const identityLabel = solanaWallet?.address ? shortAddr(solanaWallet.address) : email ?? 'your account';
 
   return (
     <div
@@ -82,9 +86,10 @@ export function CastVoiceModal({
 
         <div className="px-5 py-5">
           <p className="text-[13px] text-content-muted">
-            On <span className="text-content font-medium">{project.name}</span>. Your identity is
-            proven with a zero-knowledge check, so one verified person can weigh in once. Your
-            name is never revealed or stored.
+            On <span className="text-content font-medium">{project.name}</span>. Verified via social
+            login (one account, one voice per project). Passport-grade zk identity (zkPassport /
+            Self) is the documented upgrade. Your sentiment is anchored on-chain under an unlinkable
+            nullifier, never your name.
           </p>
 
           {phase === 'form' || phase === 'error' ? (
@@ -114,34 +119,60 @@ export function CastVoiceModal({
                 </div>
               </div>
 
-              {/* optional identity seed (dev proof) */}
-              <div className="mt-4">
-                <label htmlFor="uid" className="text-[12px] text-content-muted">
-                  Identity reference <span className="text-content-faint">(dev proof; leave blank to auto-generate)</span>
-                </label>
-                <input
-                  id="uid"
-                  type="text"
-                  value={uniqueId}
-                  onChange={(e) => setUniqueId(e.target.value)}
-                  placeholder="e.g. citizen-kathmandu-01"
-                  className="mt-1.5 w-full rounded-md border border-line bg-ink px-3 py-2 text-[13px] text-content placeholder:text-content-faint focus:outline-none focus-visible:ring-2 focus-visible:ring-signal/60"
-                />
-              </div>
-
               {err && (
                 <p role="alert" className="mt-3 text-[12px] text-civic">
                   {err}
                 </p>
               )}
 
-              <button
-                type="button"
-                onClick={submit}
-                className="mt-5 w-full rounded-md bg-signal px-4 py-2.5 text-[14px] font-semibold text-ink transition-colors hover:bg-signal/90 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-signal/60"
-              >
-                Verify and record on-chain
-              </button>
+              {/* identity gate */}
+              {!configured ? (
+                <p className="mt-5 rounded-md border border-line bg-ink px-3 py-2.5 text-[12px] text-content-muted">
+                  Sign-in is not configured for this deployment, so voices cannot be recorded here.
+                </p>
+              ) : !authenticated ? (
+                <div className="mt-5">
+                  <button
+                    type="button"
+                    onClick={login}
+                    disabled={!ready || loggingIn}
+                    className="flex w-full items-center justify-center gap-2 rounded-md bg-signal px-4 py-2.5 text-[14px] font-semibold text-ink transition-colors hover:bg-signal/90 disabled:opacity-60 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-signal/60"
+                  >
+                    {loggingIn ? (
+                      <Loader2 size={15} className="animate-spin" aria-hidden />
+                    ) : (
+                      <LogIn size={15} aria-hidden />
+                    )}
+                    Sign in to cast your voice
+                  </button>
+                  <p className="mt-2 text-[11px] text-content-faint">
+                    Sign in with email, Google, X, or a wallet. One verified account can weigh in
+                    once per project.
+                  </p>
+                  {loginError && (
+                    <p role="alert" className="mt-2 text-[11px] text-civic">
+                      {loginError}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <div className="mt-5 flex items-center gap-2 rounded-md border border-line bg-ink px-3 py-2.5">
+                    <ShieldCheck size={15} className="text-signal" aria-hidden />
+                    <span className="text-[12px] text-content-muted">
+                      Signed in as{' '}
+                      <span className="font-mono text-content">{identityLabel}</span>
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={submit}
+                    className="mt-4 w-full rounded-md bg-signal px-4 py-2.5 text-[14px] font-semibold text-ink transition-colors hover:bg-signal/90 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-signal/60"
+                  >
+                    Verify and record on-chain
+                  </button>
+                </>
+              )}
             </>
           ) : null}
 
@@ -149,7 +180,7 @@ export function CastVoiceModal({
             <div className="mt-6 flex flex-col items-center gap-3 py-4 text-center">
               <Loader2 size={26} className="animate-spin text-signal" aria-hidden />
               <p className="text-[13px] text-content-muted">
-                {phase === 'verifying' ? 'Verifying zero-knowledge identity proof…' : 'Anchoring your voice on Solana…'}
+                {phase === 'verifying' ? 'Verifying your sign-in…' : 'Anchoring your voice on Solana…'}
               </p>
             </div>
           )}
@@ -190,17 +221,4 @@ export function CastVoiceModal({
       </div>
     </div>
   );
-}
-
-function wait(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
-}
-function hash(s: string): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
-  return h;
-}
-function navigatorSeed(): string {
-  if (typeof navigator === 'undefined') return 'server';
-  return `${navigator.userAgent.length}-${navigator.language}`;
 }

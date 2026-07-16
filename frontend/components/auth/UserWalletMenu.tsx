@@ -44,7 +44,8 @@ export function UserWalletMenu({
   email: string | null;
   cluster: string;
   compact?: boolean;
-  onFund: () => void;
+  /** Optional "Fund the agent" action. Omit to hide the row (e.g. civic app). */
+  onFund?: () => void;
   onDisconnect: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -193,18 +194,20 @@ export function UserWalletMenu({
 
             <div className="my-1 h-px bg-border" />
 
-            <button
-              data-menuitem
-              onClick={() => {
-                setOpen(false);
-                onFund();
-              }}
-              className={rowCls}
-              role="menuitem"
-            >
-              <ArrowUpRight size={15} className="text-content-muted" aria-hidden />
-              Fund the agent
-            </button>
+            {onFund && (
+              <button
+                data-menuitem
+                onClick={() => {
+                  setOpen(false);
+                  onFund();
+                }}
+                className={rowCls}
+                role="menuitem"
+              >
+                <ArrowUpRight size={15} className="text-content-muted" aria-hidden />
+                Fund the agent
+              </button>
+            )}
 
             {address && (
               <a

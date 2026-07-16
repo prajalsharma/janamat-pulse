@@ -32,10 +32,11 @@ export function PrivyClientProvider({ children }: { children: ReactNode }) {
     <PrivyProvider
       appId={APP_ID}
       config={{
-        // Only offer methods actually enabled on the Privy dashboard. Google
-        // OAuth is off server-side for this app, so offering it just produces a
-        // broken flow. Re-add 'google' here once it's enabled in the dashboard.
-        loginMethods: ['email', 'wallet'],
+        // Social login is the identity layer: email + Google + X create an
+        // embedded Solana wallet for users without one, so every verified
+        // account maps to one civic voice per project. Each method offered here
+        // must also be enabled in the Privy dashboard, or its flow will error.
+        loginMethods: ['email', 'google', 'twitter', 'wallet'],
         appearance: {
           theme: 'dark',
           accentColor: '#9945FF',

@@ -88,6 +88,25 @@ export interface CivicProjectView {
   officialClaim: string;
 }
 
+/** One real, recent headline attributed to a tracked project. */
+export interface ProjectHeadline {
+  title: string;
+  source: string;
+  link: string;
+  /** epoch ms the item was published */
+  publishedAt: number;
+}
+
+/**
+ * The top (newest, deduped) real headlines for a single tracked project within
+ * the recency window. `items` is empty when the project has no recent coverage —
+ * we surface that honestly rather than fabricating headlines.
+ */
+export interface ProjectHeadlines {
+  projectId: number;
+  items: ProjectHeadline[];
+}
+
 /**
  * One cycle of the civic agent: the scored discourse and the per-project
  * accountability flags. This is the civic analogue of the trading decision —
@@ -103,4 +122,10 @@ export interface CivicPulseSnapshot {
   /** accountability flag per tracked project */
   flags: AccountabilityFlag[];
   projects: CivicProjectView[];
+  /**
+   * Top 3–4 most recent, real headlines per tracked project (newest first,
+   * deduped, within the recency window). One entry per tracked project — an
+   * entry with an empty `items` list means no recent coverage.
+   */
+  headlines: ProjectHeadlines[];
 }

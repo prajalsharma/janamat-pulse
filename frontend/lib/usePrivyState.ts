@@ -33,11 +33,17 @@ export interface PrivyState {
   loginError: string | null;
   /** Your connected Solana wallet (external or embedded), or null. */
   solanaWallet: ConnectedStandardSolanaWallet | null;
-  /** Display handle: email / social email when there is no external address. */
+  /** Display handle: email / social email / X handle. */
   email: string | null;
   login: () => void;
   clearLoginError: () => void;
   logout: () => Promise<void>;
+  /**
+   * The Privy access token (JWT) for the signed-in user, or null. Sent to the
+   * backend as the identity proof for casting a civic voice. Returns null when
+   * unconfigured or not authenticated.
+   */
+  getAccessToken: () => Promise<string | null>;
 }
 
 const READ_ONLY: PrivyState = {
@@ -51,10 +57,11 @@ const READ_ONLY: PrivyState = {
   login: () => {},
   clearLoginError: () => {},
   logout: async () => {},
+  getAccessToken: async () => null,
 };
 
 function useConfiguredPrivyState(): PrivyState {
-  const { ready, authenticated, user, logout } = usePrivy();
+  const { ready, authenticated, user, logout, getAccessToken } = usePrivy();
   const { wallets } = useSolanaWallets();
   const [loggingIn, setLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -89,7 +96,8 @@ function useConfiguredPrivyState(): PrivyState {
 
   const clearLoginError = useCallback(() => setLoginError(null), []);
 
-  const email = user?.email?.address ?? user?.google?.email ?? null;
+  const twitterHandle = user?.twitter?.username ? `@${user.twitter.username}` : null;
+  const email = user?.email?.address ?? user?.google?.email ?? twitterHandle ?? null;
 
   return {
     configured: true,
@@ -102,6 +110,7 @@ function useConfiguredPrivyState(): PrivyState {
     login: startLogin,
     clearLoginError,
     logout,
+    getAccessToken,
   };
 }
 

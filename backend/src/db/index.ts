@@ -85,6 +85,16 @@ export function recentNews(limit = 50): NewsItem[] {
     .all(limit) as NewsItem[];
 }
 
+/**
+ * Stored news published on/after `sinceMs`, newest first. Backs the rolling
+ * "top headlines per project" window so stale coverage ages out automatically.
+ */
+export function recentNewsSince(sinceMs: number, limit = 500): NewsItem[] {
+  return db
+    .prepare('SELECT * FROM news WHERE publishedAt >= ? ORDER BY publishedAt DESC LIMIT ?')
+    .all(sinceMs, limit) as NewsItem[];
+}
+
 // ── Decisions ───────────────────────────────────────────────────────────────
 const insertDecision = db.prepare(`
   INSERT OR REPLACE INTO decisions

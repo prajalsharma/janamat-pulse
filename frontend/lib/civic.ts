@@ -130,12 +130,16 @@ export async function triggerTick(): Promise<CivicPulseSnapshot | null> {
   }
 }
 
-/** Submit a zk-verified civic opinion. */
+/**
+ * Submit a civic opinion. Identity is the caller's Privy access token: the
+ * backend verifies it and maps the stable Privy user id to a per-project
+ * nullifier, so one signed-in account = one voice per project.
+ */
 export async function castOpinion(input: {
   projectId: number;
   sentiment: number;
   confidence: number;
-  uniqueId: string; // dev proof stand-in for a real zk unique identifier
+  accessToken: string; // Privy access token (JWT) from getAccessToken()
 }): Promise<OpinionResult> {
   const scope = `janamat-pulse:project:${input.projectId}`;
   const r = await fetch('/api/civic/opinion', {
@@ -145,7 +149,7 @@ export async function castOpinion(input: {
       projectId: input.projectId,
       sentiment: input.sentiment,
       confidence: input.confidence,
-      proof: { scheme: 'dev', payload: input.uniqueId, scope },
+      proof: { scheme: 'privy', payload: input.accessToken, scope },
     }),
   });
   const data = await r.json();

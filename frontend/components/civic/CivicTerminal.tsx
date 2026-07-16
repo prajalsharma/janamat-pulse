@@ -5,6 +5,7 @@ import { Activity, RefreshCw, ShieldAlert } from 'lucide-react';
 import { Wordmark } from './Logo';
 import { ProjectCard } from './ProjectCard';
 import { CastVoiceModal } from './CastVoiceModal';
+import { AuthButton } from '@/components/auth/AuthButton';
 import { useCivicPulse, flagFor, type CivicProjectView } from '@/lib/civic';
 
 export function CivicTerminal() {
@@ -38,6 +39,7 @@ export function CivicTerminal() {
               <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} aria-hidden />
               Refresh
             </button>
+            <AuthButton compact />
           </div>
         </div>
       </header>

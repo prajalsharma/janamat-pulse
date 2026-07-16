@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { civicAgent } from '../agent/civic-agent.js';
 import { civicOpinionService } from '../services/civic-opinion.js';
 import { CIVIC_PROJECTS } from '../data/civic-projects.seed.js';
+import { topHeadlinesByProject } from '../services/news.js';
 import { config } from '../config/index.js';
 
 /**
@@ -26,9 +27,18 @@ civicApi.get('/civic/projects', (_req, res) => {
   );
 });
 
-/** Latest civic pulse snapshot (sentiment + accountability flags). */
+/** Latest civic pulse snapshot (sentiment + accountability flags + headlines). */
 civicApi.get('/civic/pulse', (_req, res) => {
-  res.json(civicAgent.latest ?? { at: null, items: [], flags: [], projects: [] });
+  res.json(civicAgent.latest ?? { at: null, items: [], flags: [], projects: [], headlines: [] });
+});
+
+/**
+ * Top 3–4 recent, real headlines per tracked project (newest first, deduped,
+ * within the recency window). Computed fresh from stored news, so it works even
+ * before the first agent tick has produced a snapshot.
+ */
+civicApi.get('/civic/headlines', (_req, res) => {
+  res.json({ at: Date.now(), headlines: topHeadlinesByProject() });
 });
 
 /** Force one civic cycle (manual trigger). */

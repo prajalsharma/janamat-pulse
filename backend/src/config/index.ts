@@ -58,6 +58,14 @@ const schema = z.object({
   // without broadcasting.
   CIVIC_PROGRAM_ID: z.string().optional().default(''),
   CIVIC_RELAYER_KEY: z.string().optional().default('~/.config/solana/id.json'),
+
+  // Privy identity layer (optional). When both are set, the opinion API verifies
+  // the Privy access token server-side and uses the stable Privy user id as the
+  // identity for the nullifier. When PRIVY_APP_SECRET is unset the server runs in
+  // dev mode: it trusts the token's subject WITHOUT cryptographic verification so
+  // local development still works end to end.
+  PRIVY_APP_ID: z.string().optional().default(''),
+  PRIVY_APP_SECRET: z.string().optional().default(''),
 });
 
 const parsed = schema.safeParse(process.env);
@@ -126,6 +134,13 @@ export const config = {
     programId: env.CIVIC_PROGRAM_ID,
     relayerKey: env.CIVIC_RELAYER_KEY,
     enabled: env.CIVIC_PROGRAM_ID.length > 0,
+  },
+
+  privy: {
+    appId: env.PRIVY_APP_ID,
+    appSecret: env.PRIVY_APP_SECRET,
+    // Server-side token verification is on only when the secret is present.
+    enabled: env.PRIVY_APP_SECRET.length > 0,
   },
 } as const;
 

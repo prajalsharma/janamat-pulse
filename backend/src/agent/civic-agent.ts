@@ -1,6 +1,6 @@
 import { config } from '../config/index.js';
 import { logger } from '../utils/logger.js';
-import { newsService } from '../services/news.js';
+import { newsService, topHeadlinesByProject } from '../services/news.js';
 import { civicSentimentService } from '../services/civic-sentiment.js';
 import { CIVIC_PROJECTS } from '../data/civic-projects.seed.js';
 import { recentNews } from '../db/index.js';
@@ -97,6 +97,11 @@ export class CivicAgent {
       // 3. Accountability flags per project.
       const flags = evaluateAll(items);
 
+      // 4. Top 3–4 recent, real headlines per project (rolling recency window).
+      //    Recomputed every tick so it tracks the freshly re-pulled feeds and
+      //    ages out stale coverage; empty per project when there's none recent.
+      const headlines = topHeadlinesByProject();
+
       const snapshot: CivicPulseSnapshot = {
         at: Date.now(),
         ticks: this.ticks,
@@ -105,6 +110,7 @@ export class CivicAgent {
         items,
         flags,
         projects: PROJECT_VIEWS,
+        headlines,
       };
       this.last = snapshot;
       bus.emitEvent({ type: 'civic', payload: snapshot });

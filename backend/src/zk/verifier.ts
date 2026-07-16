@@ -1,4 +1,7 @@
 import { createHash } from 'node:crypto';
+import { PrivyClient } from '@privy-io/server-auth';
+import { config } from '../config/index.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * ZK identity → nullifier. Janamat Pulse enforces one verified human = one civic
@@ -14,7 +17,7 @@ import { createHash } from 'node:crypto';
 
 export interface IdentityProof {
   /** which proving system produced this */
-  scheme: 'zkpassport' | 'self' | 'dev';
+  scheme: 'zkpassport' | 'self' | 'privy' | 'dev';
   /** opaque proof payload passed to the adapter's verifier */
   payload: unknown;
   /** the scope the proof was generated against (must match server scope) */
@@ -106,6 +109,86 @@ export class ZkPassportVerifier implements VerifierAdapter {
 }
 
 /**
+ * Privy social-login adapter. This is the identity layer that is actually wired
+ * for Janamat Pulse today: a signed-in Privy account (email / Google / X /
+ * wallet) is the "one distinct person" the nullifier is scoped to. Honest
+ * framing: this is social-login sybil resistance (one account = one voice per
+ * project), NOT passport-grade personhood. zkPassport / Self remain the
+ * documented upgrade above; the nullifier math is identical, so swapping the
+ * source of `uniqueId` changes nothing downstream.
+ *
+ * The proof payload is the Privy **access token** (a JWT) obtained client-side
+ * via `getAccessToken()`. When PRIVY_APP_SECRET is configured the token is
+ * verified cryptographically server-side and the stable Privy user id is read
+ * from the verified claims. When it is NOT configured the server runs in dev
+ * mode: it decodes the token's subject WITHOUT verification (clearly logged) so
+ * local development still exercises the full flow.
+ */
+export class PrivyVerifier implements VerifierAdapter {
+  readonly scheme = 'privy' as const;
+  private client: PrivyClient | null = null;
+
+  constructor(private readonly opts: { appId: string; appSecret: string }) {}
+
+  private get configured(): boolean {
+    return this.opts.appId.length > 0 && this.opts.appSecret.length > 0;
+  }
+
+  private getClient(): PrivyClient {
+    if (!this.client) this.client = new PrivyClient(this.opts.appId, this.opts.appSecret);
+    return this.client;
+  }
+
+  async verify(proof: IdentityProof): Promise<VerifiedIdentity> {
+    const token = extractToken(proof.payload);
+    if (!token) {
+      throw new Error('PrivyVerifier requires a Privy access token as the proof payload');
+    }
+
+    if (this.configured) {
+      // Real, cryptographic verification against the app's ES256 key.
+      const claims = await this.getClient().verifyAuthToken(token);
+      if (!claims.userId) throw new Error('Privy token verified but carried no user id');
+      return { uniqueId: `privy:${claims.userId}`, scheme: 'privy' };
+    }
+
+    // Dev mode: no app secret. Decode the subject WITHOUT verifying the
+    // signature so local dev works. Never use this path in production.
+    const sub = decodeJwtSubject(token);
+    if (!sub) {
+      throw new Error(
+        'PrivyVerifier dev mode: could not read a subject from the token (set PRIVY_APP_SECRET for real verification)',
+      );
+    }
+    logger.warn(
+      { userId: sub },
+      'PrivyVerifier: dev mode, trusting token subject WITHOUT verification (set PRIVY_APP_SECRET to enable real server-side verification)',
+    );
+    return { uniqueId: `privy:${sub}`, scheme: 'privy' };
+  }
+}
+
+/** Pull the JWT out of a string payload or a `{ token }` object payload. */
+function extractToken(payload: unknown): string | null {
+  if (typeof payload === 'string' && payload.length > 0) return payload;
+  const t = (payload as { token?: string })?.token;
+  return typeof t === 'string' && t.length > 0 ? t : null;
+}
+
+/** Decode a JWT's `sub` claim WITHOUT verifying the signature (dev mode only). */
+function decodeJwtSubject(token: string): string | null {
+  const parts = token.split('.');
+  if (parts.length < 2) return null;
+  try {
+    const json = Buffer.from(parts[1], 'base64url').toString('utf8');
+    const claims = JSON.parse(json) as { sub?: string };
+    return typeof claims.sub === 'string' && claims.sub.length > 0 ? claims.sub : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Development verifier — NOT for production. Treats the payload as a caller-
  * supplied unique identifier so the full nullifier → on-chain → sybil-rejection
  * flow can be exercised end-to-end without a live passport scan. The real
@@ -150,10 +233,18 @@ export class IdentityVerifier {
   }
 }
 
-/** Default verifier: dev adapter always on; real adapters when configured. */
+/**
+ * Default verifier: Privy social login is the live identity layer, dev adapter
+ * stays on for local scripts/tests. The Privy adapter verifies real access
+ * tokens when PRIVY_APP_SECRET is set, and falls back to a clearly-logged dev
+ * mode otherwise so the flow is exercisable without a secret.
+ */
 export function buildIdentityVerifier(): IdentityVerifier {
-  const adapters: VerifierAdapter[] = [new DevVerifier()];
-  // In production, register the real adapters (scope from config):
+  const adapters: VerifierAdapter[] = [
+    new DevVerifier(),
+    new PrivyVerifier({ appId: config.privy.appId, appSecret: config.privy.appSecret }),
+  ];
+  // The passport-grade upgrade path (documented, not yet wired):
   //   adapters.push(new SelfVerifier({ scope: 'janamat-pulse' }));
   //   adapters.push(new ZkPassportVerifier({ scope: 'janamat-pulse' }));
   return new IdentityVerifier(adapters);
