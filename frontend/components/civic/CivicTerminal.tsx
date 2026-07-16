@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Activity, RefreshCw, ShieldAlert, Radio } from 'lucide-react';
 import { Wordmark } from './Logo';
 import { ProjectCard } from './ProjectCard';
@@ -25,7 +26,13 @@ export function CivicTerminal() {
       {/* header */}
       <header className="sticky top-0 z-30 border-b border-line bg-ink/85 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
-          <Wordmark />
+          <Link
+            href="/"
+            aria-label="Back to home"
+            className="rounded transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-signal/50 cursor-pointer"
+          >
+            <Wordmark />
+          </Link>
           <div className="flex items-center gap-3">
             <LivePill live={live} lastAt={lastAt} />
             <button
