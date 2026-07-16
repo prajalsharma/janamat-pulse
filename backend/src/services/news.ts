@@ -132,6 +132,8 @@ export function topHeadlinesByProject(
   const seen = new Map<number, Set<string>>();
 
   for (const item of items) {
+    // Never surface the offline simulated fallback as "real coverage".
+    if (item.source?.startsWith('sim.')) continue;
     const project = attributeProject(`${item.title} ${item.summary}`);
     if (!project) continue;
 

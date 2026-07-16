@@ -54,11 +54,27 @@ const config: Config = {
           '0%': { transform: 'translateX(-100%)' },
           '100%': { transform: 'translateX(100%)' },
         },
+        rise: {
+          '0%': { opacity: '0', transform: 'translateY(14px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'meter-glow': {
+          '0%, 100%': { boxShadow: '0 0 0 0 rgba(226,50,82,0)' },
+          '50%': { boxShadow: '0 0 14px -2px rgba(226,50,82,0.6)' },
+        },
+        'scan-x': {
+          '0%': { transform: 'translateX(-30%)', opacity: '0' },
+          '50%': { opacity: '1' },
+          '100%': { transform: 'translateX(130%)', opacity: '0' },
+        },
       },
       animation: {
         'fade-up': 'fade-up 320ms cubic-bezier(0,0,0.2,1) both',
         'pulse-dot': 'pulse-dot 2s ease-out infinite',
         sweep: 'sweep 2.2s ease-in-out infinite',
+        rise: 'rise 620ms cubic-bezier(0.22,1,0.36,1) both',
+        'meter-glow': 'meter-glow 2.6s ease-in-out infinite',
+        'scan-x': 'scan-x 3.6s ease-in-out infinite',
       },
     },
   },

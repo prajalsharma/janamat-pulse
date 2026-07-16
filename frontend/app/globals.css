@@ -45,6 +45,36 @@ body {
   background: #2b3a5c;
 }
 
+/* Scroll-progress signal beam (landing). Pure CSS scroll-driven animation, no JS.
+   Unsupported browsers never run the keyframes, so the beam stays at scaleX(0)
+   (invisible) and nothing breaks. Only shown when motion is welcome. */
+.scroll-beam {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  height: 2px;
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, #e23252 0%, #22d3ee 55%, #9945ff 100%);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: scroll()) {
+    .scroll-beam {
+      animation: scroll-beam-grow linear both;
+      animation-timeline: scroll(root block);
+    }
+    @keyframes scroll-beam-grow {
+      to {
+        transform: scaleX(1);
+      }
+    }
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

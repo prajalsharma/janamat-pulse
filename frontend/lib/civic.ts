@@ -34,6 +34,20 @@ export interface AccountabilityFlag {
   summary: string;
 }
 
+/** A single real news item attributed to a project. */
+export interface CivicHeadlineItem {
+  title: string;
+  source: string;
+  link: string;
+  publishedAt: string | number;
+}
+
+/** Top real headlines for one project, newest first. */
+export interface CivicHeadlines {
+  projectId: number;
+  items: CivicHeadlineItem[];
+}
+
 export interface CivicPulseSnapshot {
   at: number | null;
   ticks?: number;
@@ -42,6 +56,8 @@ export interface CivicPulseSnapshot {
   items: CivicSentiment[];
   flags: AccountabilityFlag[];
   projects: CivicProjectView[];
+  /** Top 3-4 real recent news per project (present on the live pulse). */
+  headlines?: CivicHeadlines[];
 }
 
 export interface OpinionResult {
@@ -163,4 +179,12 @@ export function flagFor(
   projectId: number,
 ): AccountabilityFlag | null {
   return snapshot?.flags.find((f) => f.projectId === projectId) ?? null;
+}
+
+/** Real recent headlines for a project in the current snapshot (may be empty). */
+export function headlinesFor(
+  snapshot: CivicPulseSnapshot | null,
+  projectId: number,
+): CivicHeadlineItem[] {
+  return snapshot?.headlines?.find((h) => h.projectId === projectId)?.items ?? [];
 }

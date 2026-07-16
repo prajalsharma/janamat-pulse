@@ -42,3 +42,29 @@ export function clockIn(ts: number | null): string {
   const s = Math.max(0, Math.round((ts - Date.now()) / 1000));
   return `${s}s`;
 }
+
+/**
+ * Relative time from a flexible input (ISO string, ms epoch, or seconds epoch).
+ * Used for real news headlines whose `publishedAt` may arrive in any of those
+ * forms. Returns a compact, tabular-friendly label (e.g. "3h ago", "2d ago").
+ */
+export function relTime(input: string | number | null | undefined): string {
+  if (input == null || input === '') return '';
+  let ms: number;
+  if (typeof input === 'number') {
+    ms = input < 1e12 ? input * 1000 : input; // treat 10-digit as seconds
+  } else {
+    const parsed = Date.parse(input);
+    if (Number.isNaN(parsed)) return '';
+    ms = parsed;
+  }
+  const s = Math.max(0, Math.floor((Date.now() - ms) / 1000));
+  if (s < 45) return 'just now';
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d}d ago`;
+  return `${Math.floor(d / 7)}w ago`;
+}

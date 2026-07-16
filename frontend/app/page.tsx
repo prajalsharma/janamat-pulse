@@ -9,6 +9,7 @@ import { LandingFooter } from '@/components/landing-civic/LandingFooter';
 export default function LandingPage() {
   return (
     <div className="min-h-dvh">
+      <div className="scroll-beam" aria-hidden />
       <LandingNav />
       <main>
         <Hero />

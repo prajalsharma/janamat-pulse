@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ExternalLink } from 'lucide-react';
 
@@ -58,12 +59,63 @@ export function Hero() {
         </div>
 
         <div className="hero-enter hero-enter-2">
-          <ClaimVsSentiment />
+          <TiltCard>
+            <ClaimVsSentiment />
+          </TiltCard>
         </div>
       </div>
 
       <StyleBlock />
     </header>
+  );
+}
+
+/**
+ * Pointer-reactive depth for the signature hero card. A subtle 3D tilt tracks the
+ * cursor, updating transform directly (never React state) for a fluid, premium
+ * feel. Disabled on touch/coarse pointers and under reduced motion.
+ */
+function TiltCard({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const fine = window.matchMedia('(pointer: fine)').matches;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!fine || reduce) return;
+
+    let raf = 0;
+    const onMove = (e: PointerEvent) => {
+      const r = el.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width - 0.5;
+      const py = (e.clientY - r.top) / r.height - 0.5;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        el.style.transform = `perspective(1100px) rotateX(${(-py * 4.5).toFixed(2)}deg) rotateY(${(px * 6).toFixed(2)}deg)`;
+      });
+    };
+    const onLeave = () => {
+      cancelAnimationFrame(raf);
+      el.style.transform = 'perspective(1100px) rotateX(0deg) rotateY(0deg)';
+    };
+
+    el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerleave', onLeave);
+    return () => {
+      cancelAnimationFrame(raf);
+      el.removeEventListener('pointermove', onMove);
+      el.removeEventListener('pointerleave', onLeave);
+    };
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className="transition-transform duration-200 ease-out [transform-style:preserve-3d] will-change-transform"
+    >
+      {children}
+    </div>
   );
 }
 
