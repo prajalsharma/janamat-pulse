@@ -137,7 +137,13 @@ async function withClaude(
 }
 
 export class CivicSentimentService {
-  readonly engine: 'claude' | 'heuristic' = config.ai.enabled ? 'claude' : 'heuristic';
+  // Once Claude fails permanently (no credits / bad key), stop calling it for
+  // the rest of the session so we don't hammer the API (and spam logs) per item.
+  private claudeDisabled = false;
+
+  get engine(): 'claude' | 'heuristic' {
+    return config.ai.enabled && !this.claudeDisabled ? 'claude' : 'heuristic';
+  }
 
   // Score each item once (keyed by stable item id). The agent re-evaluates a
   // rolling window every tick, so this keeps re-scoring cheap and, with Claude,
@@ -160,14 +166,24 @@ export class CivicSentimentService {
     const category = project?.category ?? CivicCategory.Governance;
     const officialClaim = project?.officialClaim ?? null;
 
-    if (client) {
+    if (client && !this.claudeDisabled) {
       try {
         return await withClaude(item, projectId, category, officialClaim);
       } catch (err) {
-        logger.warn(
-          { err: (err as Error).message },
-          'Claude civic sentiment failed — falling back to heuristic',
-        );
+        const msg = (err as Error).message ?? '';
+        // A credit/auth failure will not recover this session. Disable Claude
+        // entirely so the agent falls straight through to the heuristic instead
+        // of failing an API call for every single headline.
+        if (/credit balance|authentication|invalid x-api-key|401|permission/i.test(msg)) {
+          if (!this.claudeDisabled) {
+            this.claudeDisabled = true;
+            logger.error(
+              'Claude unavailable (credit/auth); using the heuristic scorer for the rest of the session. Add credits or remove ANTHROPIC_API_KEY.',
+            );
+          }
+        } else {
+          logger.warn({ err: msg }, 'Claude scoring failed; heuristic fallback for this item');
+        }
       }
     }
     return heuristic(item, projectId, category);

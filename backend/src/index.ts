@@ -10,6 +10,20 @@ import { civicAgent } from './agent/civic-agent.js';
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Friendly root so hitting the service URL directly isn't a bare "Cannot GET /".
+// This is the API/agent host; the UI lives on the frontend (Vercel).
+app.get('/', (_req, res) => {
+  res.json({
+    service: 'janamat-pulse-backend',
+    ok: true,
+    health: '/api/civic/health',
+    pulse: '/api/civic/pulse',
+    projects: '/api/civic/projects',
+    ws: '/ws',
+  });
+});
+
 app.use('/api', civicApi); // Janamat Pulse civic API
 
 // Central error handler so route failures return clean JSON.
