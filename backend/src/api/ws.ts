@@ -2,12 +2,12 @@ import type { Server } from 'node:http';
 import { WebSocketServer, WebSocket } from 'ws';
 import { logger } from '../utils/logger.js';
 import { bus } from '../agent/bus.js';
-import { agent } from '../agent/agent.js';
-import { recentDecisions, recentNews, recentTrades } from '../db/index.js';
+import { civicAgent } from '../agent/civic-agent.js';
 
 /**
- * WebSocket fan-out. On connect we send a snapshot so a fresh browser tab is
- * immediately populated; thereafter we stream every bus event live.
+ * WebSocket fan-out. On connect we send the latest civic pulse snapshot so a
+ * fresh browser tab is immediately populated; thereafter we stream every bus
+ * event live (civic cycles, ingested news).
  */
 export function attachWebSocket(server: Server): void {
   const wss = new WebSocketServer({ server, path: '/ws' });
@@ -19,13 +19,9 @@ export function attachWebSocket(server: Server): void {
       if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(data));
     };
 
-    // Initial snapshot.
-    send({ type: 'status', payload: agent.status() });
-    send({ type: 'snapshot', payload: {
-      news: recentNews(30),
-      decisions: recentDecisions(30),
-      trades: recentTrades(50),
-    }});
+    // Initial snapshot: the most recent civic pulse, when a cycle has run.
+    const latest = civicAgent.latest;
+    if (latest) send({ type: 'civic', payload: latest });
 
     const unsubscribe = bus.onEvent((event) => send(event));
 
